@@ -63,7 +63,9 @@ stage('Deploy') {
                 }
                 }
             }
-}
+        }
+    }
+
 
     post {
         success {

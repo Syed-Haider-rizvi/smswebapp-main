@@ -43,23 +43,17 @@ pipeline {
             }
         }
     }
-stage('Deploy') {
+        stage('Deploy') {
             steps {
+                // Deploy the application (example for IIS)
                 script {
-                    withCredentials([usernamePassword(credentialsId: 'coreuser', passwordVariable: 'CREDENTIAL_PASSWORD', usernameVariable: 'CREDENTIAL_USERNAME')]) {
-                    powershell '''
-                    
-                    $credentials = New-Object System.Management.Automation.PSCredential($env:CREDENTIAL_USERNAME, (ConvertTo-SecureString $env:CREDENTIAL_PASSWORD -AsPlainText -Force))
+                    bat """
+                    powershell -Command "
+                    Stop-WebAppPool -Name 'coreapp3';
+                    Copy-Item -Path ./publish/* -Destination 'C:\\inetpub\\wwwroot\\coreapp3' -Recurse -Force;
+                    Start-WebAppPool -Name 'coreapp3';
+                    "
 
-                    
-                    New-PSDrive -Name X -PSProvider FileSystem -Root "\\\\WIN-LASFB11DPMP\\coreapp3" -Persist -Credential $credentials
-
-                    
-                    Copy-Item -Path './publish/*' -Destination 'X:' -Force
-
-                    
-                    Remove-PSDrive -Name Z
-                    '''
                 }
                 }
             }

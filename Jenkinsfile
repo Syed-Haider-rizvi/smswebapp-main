@@ -50,7 +50,7 @@ pipeline {
                     bat """
                     powershell -Command "
                     Stop-WebAppPool -Name 'coreapp3';
-                    Copy-Item -Path ./publish/* -Destination 'C:\\inetpub\\wwwroot\\coreapp3' -Recurse -Force;
+                    Copy-Item -Path ./publish/* -Destination '\\WIN-LASFB11DPMP\coreapp3' -Recurse -Force;
                     Start-WebAppPool -Name 'coreapp3';
                     "
 

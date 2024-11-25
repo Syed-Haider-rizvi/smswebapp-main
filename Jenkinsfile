@@ -1,10 +1,6 @@
 pipeline {
     agent any
 
-    environment {
-        DOTNET_CLI_HOME = "C:\\Program Files\\dotnet"
-    }
-
     stages {
         stage('Checkout') {
             steps {
@@ -16,7 +12,6 @@ pipeline {
             steps {
                 script {
                     // Restoring dependencies
-                    //bat "cd ${DOTNET_CLI_HOME} && dotnet restore"
                     bat "dotnet restore"
 
                     // Building the application
@@ -42,28 +37,37 @@ pipeline {
                 }
             }
         }
-    }
+
         stage('Deploy') {
             steps {
-                // Deploy the application (example for IIS)
                 script {
-                    bat """
-                    powershell -Command "
-                    Stop-WebAppPool -Name 'coreapp3';
-                    Copy-Item -Path ./publish/* -Destination '\\WIN-LASFB11DPMP\coreapp3' -Recurse -Force;
-                    Start-WebAppPool -Name 'coreapp3';
-                    "
+                    withCredentials([usernamePassword(credentialsId: 'coreuser', passwordVariable: 'CREDENTIAL_PASSWORD', usernameVariable: 'CREDENTIAL_USERNAME')]) {
+                        powershell '''
+                        # Create a PSCredential object using the Jenkins credentials
+                        $credentials = New-Object System.Management.Automation.PSCredential($env:CREDENTIAL_USERNAME, (ConvertTo-SecureString $env:CREDENTIAL_PASSWORD -AsPlainText -Force))
 
-                }
+                        # Map the network drive
+                        New-PSDrive -Name X -PSProvider FileSystem -Root "\\\\172.16.14.79\\coreapp3" -Persist -Credential $credentials
+
+                        # Copy the published files to the network share
+                        Copy-Item -Path '.\\publish\\*' -Destination 'X:\\' -Force
+
+                        # Remove the network drive
+                        Remove-PSDrive -Name X
+                        '''
+                    }
                 }
             }
         }
     }
 
-
     post {
         success {
             echo 'Build, test, and publish successful!'
         }
-    }
 
+        failure {
+            echo 'Build, test, or publish failed.'
+        }
+    }
+}
